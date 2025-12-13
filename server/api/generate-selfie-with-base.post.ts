@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
           content: [
             {
               type: 'text',
-              text: 'CRITICAL IDENTITY PRESERVATION REQUIREMENT: You must preserve the EXACT facial appearance and identity of the person shown in the user selfie image. The person in the final image must look IDENTICAL to the person in the user selfie - same face shape, same eye color and shape, same nose, same mouth, same skin tone, same hair color and style, same distinctive features. Do not alter, modify, or stylize the person\'s appearance. The person must be recognizable as the exact same individual from the selfie image.'
+              text: 'COMPOSITION INSTRUCTIONS: Generate a single, hyper-realistic, high-detail selfie photograph. The foundational scene and background must be derived exclusively from the BASE background image (shown below); this setting serves as the environment for the final image.'
             },
             {
               type: 'text',
@@ -91,7 +91,11 @@ export default defineEventHandler(async (event) => {
             },
             {
               type: 'text',
-              text: '[User Selfie Image - PRESERVE THIS PERSON\'S EXACT APPEARANCE]'
+              text: 'Integrate the person from the user selfie image (shown below) into the BASE background image, placing them standing close together. The final image should have a selfie-style perspective (close-up, intimate framing) as if taken from a first-person viewpoint, but DO NOT include any visible hands, smartphones, or camera equipment in the frame. The image should appear as if the camera is invisible, capturing a natural moment without showing the device or hand holding it.'
+            },
+            {
+              type: 'text',
+              text: '[User Selfie Image]'
             },
             {
               type: 'image',
@@ -100,15 +104,7 @@ export default defineEventHandler(async (event) => {
             },
             {
               type: 'text',
-              text: 'COMPOSITION TASK: Generate a single, hyper-realistic, high-detail selfie photograph. Use the BASE background image as the complete environment and setting for the final image. Integrate the person from the user selfie image into this background, placing them naturally in the scene. The person must maintain their EXACT facial features, skin tone, hair, eye color, and all distinctive characteristics from the selfie image - they must be instantly recognizable as the same person.'
-            },
-            {
-              type: 'text',
-              text: 'The final image should have a selfie-style perspective (close-up, intimate framing) as if taken from a first-person viewpoint. The person should be smiling and looking directly into the camera lens. DO NOT include any visible hands, smartphones, phones, or camera equipment in the frame - only show the person and the background. Maintain consistent, warm, soft, natural daylight lighting that matches the base image environment. The final image must appear as a spontaneous, single-shot photograph taken in the original environment of the BASE background image.'
-            },
-            {
-              type: 'text',
-              text: 'REMINDER: The person\'s identity, facial features, and appearance from the user selfie image must be preserved EXACTLY - do not create a generic or stylized version. The person must look like themselves, not a different person.'
+              text: 'Both individuals must be smiling, looking directly into the lens, and their precise facial likenesses, clothing, and details from their respective input images must be accurately and seamlessly preserved. Maintain consistent, warm, soft, natural daylight and ensure the overall vibe is joyful and spontaneous. The final image must appear as a spontaneous, single-shot photograph taken in the original environment of the BASE background image. IMPORTANT: Do not include any visible hands, smartphones, phones, or camera equipment in the final image - only show the people and background.'
             }
           ]
         }
