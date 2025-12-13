@@ -5,52 +5,99 @@
       <header class="header">
         <h1 class="title">
           <span class="title-main">Selfie with</span>
-          <span class="title-yoda">Yoda</span>
+          <span class="title-custom">Custom Background</span>
         </h1>
-        <p class="subtitle">May the Force be with your selfie</p>
+        <p class="subtitle">Upload your background and your selfie</p>
       </header>
 
       <div class="upload-section">
-        <div v-if="!uploadedImage && !generatedImage" class="upload-area">
-          <label for="file-upload" class="upload-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>Upload Your Photo</span>
-          </label>
-          <input
-            id="file-upload"
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            @change="handleFileUpload"
-            class="file-input"
-          />
+        <!-- Initial upload state - show both upload buttons -->
+        <div v-if="!uploadedBaseImage || !uploadedImage" class="upload-area">
+          <div class="dual-upload-container">
+            <!-- Base Image Upload -->
+            <div class="upload-item">
+              <label v-if="!uploadedBaseImage" for="base-image-upload" class="upload-button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Upload Base Image</span>
+              </label>
+              <input
+                id="base-image-upload"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                @change="handleBaseImageUpload"
+                class="file-input"
+              />
+              <div v-if="uploadedBaseImage" class="image-preview">
+                <img :src="uploadedBaseImage" alt="Base image" class="preview-image" />
+                <button @click="resetBaseImage" class="reset-button">×</button>
+              </div>
+            </div>
+
+            <!-- User Selfie Upload -->
+            <div class="upload-item">
+              <label v-if="!uploadedImage" for="user-image-upload" class="upload-button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Upload Your Photo</span>
+              </label>
+              <input
+                id="user-image-upload"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                @change="handleUserImageUpload"
+                class="file-input"
+              />
+              <div v-if="uploadedImage" class="image-preview">
+                <img :src="uploadedImage" alt="Your photo" class="preview-image" />
+                <button @click="resetUserImage" class="reset-button">×</button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div v-if="uploadedImage && !generatedImage && !loading" class="preview-section">
-          <div class="image-preview">
-            <img :src="uploadedImage" alt="Your photo" class="preview-image" />
-            <button @click="resetUpload" class="reset-button">×</button>
+        <!-- Both images uploaded - show previews and generate button -->
+        <div v-if="uploadedBaseImage && uploadedImage && !generatedImage && !loading" class="preview-section">
+          <div class="dual-preview-container">
+            <div class="preview-item">
+              <h3 class="preview-label">Base Image</h3>
+              <div class="image-preview">
+                <img :src="uploadedBaseImage" alt="Base image" class="preview-image" />
+                <button @click="resetBaseImage" class="reset-button">×</button>
+              </div>
+            </div>
+            <div class="preview-item">
+              <h3 class="preview-label">Your Photo</h3>
+              <div class="image-preview">
+                <img :src="uploadedImage" alt="Your photo" class="preview-image" />
+                <button @click="resetUserImage" class="reset-button">×</button>
+              </div>
+            </div>
           </div>
           <button @click="generateSelfie" class="generate-button">
-            Generate Selfie with Yoda
+            Generate Selfie
           </button>
         </div>
 
         <div v-if="loading" class="loading-section">
           <div class="spinner"></div>
-          <p class="loading-text">The Force is strong with this one...</p>
-          <p class="loading-subtext">Generating your selfie</p>
+          <p class="loading-text">Creating your custom selfie...</p>
+          <p class="loading-subtext">This may take a moment</p>
         </div>
 
         <div v-if="generatedImage && !loading" class="result-section">
           <div class="result-image-container">
-            <img :src="generatedImage" alt="Selfie with Yoda" class="result-image" />
+            <img :src="generatedImage" alt="Generated selfie" class="result-image" />
           </div>
           <div class="result-actions">
             <button @click="downloadImage" class="download-button">Download</button>
+            <button @click="retryGeneration" class="retry-button">Retry</button>
             <button @click="resetAll" class="reset-all-button">Create Another</button>
           </div>
         </div>
@@ -67,27 +114,52 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+const uploadedBaseImage = ref<string | null>(null)
 const uploadedImage = ref<string | null>(null)
 const generatedImage = ref<string | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const handleFileUpload = (event: Event) => {
+const validateFile = (file: File): string | null => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    return 'Please upload a JPEG, PNG, or WebP image.'
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    return 'Image size must be less than 10MB.'
+  }
+  return null
+}
+
+const handleBaseImageUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   
   if (!file) return
 
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
-    error.value = 'Please upload a JPEG, PNG, or WebP image.'
+  const validationError = validateFile(file)
+  if (validationError) {
+    error.value = validationError
     return
   }
 
-  // Validate file size (max 10MB)
-  if (file.size > 10 * 1024 * 1024) {
-    error.value = 'Image size must be less than 10MB.'
+  error.value = null
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    uploadedBaseImage.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+const handleUserImageUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+
+  const validationError = validateFile(file)
+  if (validationError) {
+    error.value = validationError
     return
   }
 
@@ -100,27 +172,41 @@ const handleFileUpload = (event: Event) => {
 }
 
 const generateSelfie = async () => {
-  if (!uploadedImage.value) return
+  if (!uploadedBaseImage.value || !uploadedImage.value) return
 
   loading.value = true
   error.value = null
   generatedImage.value = null
 
   try {
-    // Convert base64 data URL to blob for FormData
-    const base64Data = uploadedImage.value.split(',')[1]
-    const byteCharacters = atob(base64Data)
-    const byteNumbers = new Array(byteCharacters.length)
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    // Convert base64 data URLs to blobs for FormData
+    const base64ToBlob = (dataUrl: string, defaultType: string = 'image/jpeg'): Blob => {
+      const base64Data = dataUrl.split(',')[1]
+      if (!base64Data) {
+        throw new Error('Invalid base64 data URL format')
+      }
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      
+      // Try to extract MIME type from data URL
+      const mimeMatch = dataUrl.match(/data:([^;]+);/)
+      const mimeType = mimeMatch ? mimeMatch[1] : defaultType
+      
+      return new Blob([byteArray], { type: mimeType })
     }
-    const byteArray = new Uint8Array(byteNumbers)
-    const blob = new Blob([byteArray], { type: 'image/jpeg' })
+    
+    const baseImageBlob = base64ToBlob(uploadedBaseImage.value)
+    const userImageBlob = base64ToBlob(uploadedImage.value)
     
     const formData = new FormData()
-    formData.append('image', blob, 'user-photo.jpg')
+    formData.append('baseImage', baseImageBlob, 'base-image.jpg')
+    formData.append('image', userImageBlob, 'user-photo.jpg')
 
-    const response = await $fetch<{ success: boolean; image: string }>('/api/generate-selfie', {
+    const response = await $fetch<{ success: boolean; image: string }>('/api/generate-selfie-with-base', {
       method: 'POST',
       body: formData
     })
@@ -141,26 +227,42 @@ const generateSelfie = async () => {
   }
 }
 
-const resetUpload = () => {
+const resetBaseImage = () => {
+  uploadedBaseImage.value = null
+  const fileInput = document.getElementById('base-image-upload') as HTMLInputElement
+  if (fileInput) {
+    fileInput.value = ''
+  }
+}
+
+const resetUserImage = () => {
   uploadedImage.value = null
-  const fileInput = document.getElementById('file-upload') as HTMLInputElement
+  const fileInput = document.getElementById('user-image-upload') as HTMLInputElement
   if (fileInput) {
     fileInput.value = ''
   }
 }
 
 const resetAll = () => {
+  uploadedBaseImage.value = null
   uploadedImage.value = null
   generatedImage.value = null
   error.value = null
-  const fileInput = document.getElementById('file-upload') as HTMLInputElement
-  if (fileInput) {
-    fileInput.value = ''
-  }
+  const baseInput = document.getElementById('base-image-upload') as HTMLInputElement
+  const userInput = document.getElementById('user-image-upload') as HTMLInputElement
+  if (baseInput) baseInput.value = ''
+  if (userInput) userInput.value = ''
 }
 
 const clearError = () => {
   error.value = null
+}
+
+const retryGeneration = () => {
+  // Simply call generateSelfie again with the existing images
+  if (uploadedBaseImage.value && uploadedImage.value) {
+    generateSelfie()
+  }
 }
 
 const downloadImage = () => {
@@ -168,7 +270,7 @@ const downloadImage = () => {
 
   const link = document.createElement('a')
   link.href = generatedImage.value
-  link.download = 'selfie-with-yoda.jpg'
+  link.download = 'custom-selfie.jpg'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -237,28 +339,28 @@ const downloadImage = () => {
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
-.title-yoda {
+.title-custom {
   display: block;
-  color: #4ade80;
+  color: #60a5fa;
   text-shadow: 
-    0 0 10px rgba(74, 222, 128, 0.8),
-    0 0 20px rgba(74, 222, 128, 0.6),
-    0 0 30px rgba(74, 222, 128, 0.4);
+    0 0 10px rgba(96, 165, 250, 0.8),
+    0 0 20px rgba(96, 165, 250, 0.6),
+    0 0 30px rgba(96, 165, 250, 0.4);
   animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
   from {
     text-shadow: 
-      0 0 10px rgba(74, 222, 128, 0.8),
-      0 0 20px rgba(74, 222, 128, 0.6),
-      0 0 30px rgba(74, 222, 128, 0.4);
+      0 0 10px rgba(96, 165, 250, 0.8),
+      0 0 20px rgba(96, 165, 250, 0.6),
+      0 0 30px rgba(96, 165, 250, 0.4);
   }
   to {
     text-shadow: 
-      0 0 20px rgba(74, 222, 128, 1),
-      0 0 30px rgba(74, 222, 128, 0.8),
-      0 0 40px rgba(74, 222, 128, 0.6);
+      0 0 20px rgba(96, 165, 250, 1),
+      0 0 30px rgba(96, 165, 250, 0.8),
+      0 0 40px rgba(96, 165, 250, 0.6);
   }
 }
 
@@ -280,6 +382,20 @@ const downloadImage = () => {
 
 .upload-area {
   text-align: center;
+}
+
+.dual-upload-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.upload-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 .file-input {
@@ -318,17 +434,43 @@ const downloadImage = () => {
   gap: 2rem;
 }
 
+.dual-preview-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 100%;
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preview-label {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .image-preview {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  width: 100%;
 }
 
 .preview-image {
   max-width: 100%;
-  max-height: 400px;
+  max-height: 300px;
   display: block;
+  width: 100%;
+  object-fit: contain;
 }
 
 .reset-button {
@@ -378,8 +520,8 @@ const downloadImage = () => {
 .spinner {
   width: 60px;
   height: 60px;
-  border: 4px solid rgba(74, 222, 128, 0.2);
-  border-top-color: #4ade80;
+  border: 4px solid rgba(96, 165, 250, 0.2);
+  border-top-color: #60a5fa;
   border-radius: 50%;
   margin: 0 auto 1.5rem;
   animation: spin 1s linear infinite;
@@ -390,7 +532,7 @@ const downloadImage = () => {
 }
 
 .loading-text {
-  color: #4ade80;
+  color: #60a5fa;
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
@@ -413,7 +555,7 @@ const downloadImage = () => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(74, 222, 128, 0.3);
+  border: 2px solid rgba(96, 165, 250, 0.3);
 }
 
 .result-image {
@@ -430,6 +572,7 @@ const downloadImage = () => {
 }
 
 .download-button,
+.retry-button,
 .reset-all-button {
   padding: 0.875rem 2rem;
   border: none;
@@ -449,6 +592,17 @@ const downloadImage = () => {
 .download-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4);
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.6);
 }
 
 .reset-all-button {
@@ -505,15 +659,21 @@ const downloadImage = () => {
     padding: 2rem 1.5rem;
   }
 
+  .dual-upload-container,
+  .dual-preview-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
   .result-actions {
     flex-direction: column;
     width: 100%;
   }
 
   .download-button,
+  .retry-button,
   .reset-all-button {
     width: 100%;
   }
 }
 </style>
-
