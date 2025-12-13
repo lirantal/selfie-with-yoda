@@ -97,6 +97,7 @@
           </div>
           <div class="result-actions">
             <button @click="downloadImage" class="download-button">Download</button>
+            <button @click="retryGeneration" class="retry-button">Retry</button>
             <button @click="resetAll" class="reset-all-button">Create Another</button>
           </div>
         </div>
@@ -181,6 +182,9 @@ const generateSelfie = async () => {
     // Convert base64 data URLs to blobs for FormData
     const base64ToBlob = (dataUrl: string, defaultType: string = 'image/jpeg'): Blob => {
       const base64Data = dataUrl.split(',')[1]
+      if (!base64Data) {
+        throw new Error('Invalid base64 data URL format')
+      }
       const byteCharacters = atob(base64Data)
       const byteNumbers = new Array(byteCharacters.length)
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -252,6 +256,13 @@ const resetAll = () => {
 
 const clearError = () => {
   error.value = null
+}
+
+const retryGeneration = () => {
+  // Simply call generateSelfie again with the existing images
+  if (uploadedBaseImage.value && uploadedImage.value) {
+    generateSelfie()
+  }
 }
 
 const downloadImage = () => {
@@ -561,6 +572,7 @@ const downloadImage = () => {
 }
 
 .download-button,
+.retry-button,
 .reset-all-button {
   padding: 0.875rem 2rem;
   border: none;
@@ -580,6 +592,17 @@ const downloadImage = () => {
 .download-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4);
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(96, 165, 250, 0.6);
 }
 
 .reset-all-button {
@@ -648,6 +671,7 @@ const downloadImage = () => {
   }
 
   .download-button,
+  .retry-button,
   .reset-all-button {
     width: 100%;
   }
